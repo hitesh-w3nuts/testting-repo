@@ -1,0 +1,143 @@
+<html>
+<head>
+    <title>Event Click LatLng</title>
+    <style type="text/css">
+        #map {
+            height: 100%;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&libraries=places"></script>
+        <!-- <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDXkStU3tGlb68veN2koEt0ARp1gwwxyvc&libraries=places"></script> -->
+</body>
+<script type="text/javascript">
+    var marker;
+    var map;
+    function initialize() {
+        var mapOptions = {
+            zoom: 4,
+            center: new google.maps.LatLng(52.1326, 5.2913),
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        map = new google.maps.Map(document.getElementById('map'),
+            mapOptions);
+        const service = new google.maps.places.PlacesService(map);
+        google.maps.event.addListener(map, 'click', function (e) {
+            console.log(e)
+            console.log('clicked @' + e.latLng.toString())
+            if (marker && marker.setMap) {
+                marker.setMap(null);
+            }
+            placeMarker(e.latLng, map)
+        })
+    }
+
+    function graphAddress(marker_wizard) {
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ 'latLng': marker_wizard.getPosition() }, function (results, status) {
+            if (status == google.maps.GeocoderStatus.OK) {
+                if (results[0]) {
+                    var address = results[0];
+                    get_zoom_level(address)
+                }
+            }
+        });
+    }
+
+    function placeMarker(position, map) {
+
+        var bounds = new google.maps.LatLngBounds();
+        marker = new google.maps.Marker({
+            position: position,
+            map: map
+        });
+        marker.setAnimation(google.maps.Animation.DROP);
+        //setTimeout(function(){ marker.setAnimation(null); }, 750);
+        map.setCenter(position);
+        //bounds.extend(position)
+        map.panTo(position);
+        graphAddress(marker)
+        //map.fitBounds(bounds);
+    }
+    initialize()
+
+    var oldCountry = oldAdminLvl1 = oldAdminLvl2 = oldAdminLvl3 = oldCity = oldZoom = '';
+    function get_zoom_level(address) {
+        var zoomLevel = 5;
+        
+        var newCountry = newAdminLvl1 = newAdminLvl2 = newAdminLvl3 = newCity = '';
+        for(var i = 0; i < address.address_components.length; i++){
+            const add = address.address_components[i]
+            var types = add.types;
+            if(types.includes("locality")){
+                newCity = add.long_name
+            }else if(types.includes("administrative_area_level_3")){
+                newAdminLvl3 = add.long_name;
+            }else if(types.includes("administrative_area_level_2")){
+                newAdminLvl2 = add.long_name;
+            }else if(types.includes("administrative_area_level_1")){
+                newAdminLvl1 = add.long_name;
+            }else if(types.includes("country")){
+                newCountry = add.long_name;
+            }
+        }
+
+        if(newCountry != '' && newCountry != oldCountry){
+            zoomLevel = 5;
+        }else if(newAdminLvl1 != '' && newAdminLvl1 != oldAdminLvl1){
+            zoomLevel = 7;
+        }else if(newAdminLvl2 != '' && newAdminLvl2 != oldAdminLvl2){
+            zoomLevel = 9;
+        }else if(newAdminLvl3 != '' && newAdminLvl3 != oldAdminLvl3){
+            zoomLevel = 11;
+        }else if(newCity != '' && newCity != oldCity){
+            zoomLevel = 13;
+        }
+        else{
+            zoomLevel = map.getZoom();
+        }
+        
+        if(zoomLevel < map.getZoom()){
+            zoomLevel = map.getZoom();
+        }
+
+
+        // else if(newCity != '' && newCity != oldCity){
+        //     zoomLevel = 15;
+        // }
+        console.log('old===='+oldCountry);
+        console.log('old===='+oldAdminLvl1);
+        console.log('old===='+oldAdminLvl2);
+        console.log('old===='+oldAdminLvl3);
+        console.log('old===='+oldCity);
+
+        console.log('new===='+newCountry);
+        console.log('new===='+newAdminLvl1);
+        console.log('new===='+newAdminLvl2);
+        console.log('new===='+newAdminLvl3);
+        console.log('new===='+newCity);
+
+
+        oldCountry = newCountry;
+        oldAdminLvl1 = newAdminLvl1;
+        oldAdminLvl2 = newAdminLvl2;
+        oldAdminLvl3 = newAdminLvl3;
+        oldCity = newCity;
+
+        
+
+        console.log(zoomLevel);
+        map.setZoom(zoomLevel);
+        oldZoom = zoomLevel;
+    }
+</script>
+</html>
